@@ -1,0 +1,148 @@
+package db
+
+import "time"
+
+// KKT is one cash register (Контрольно-кассовая техника) record.
+// SerialNumber (Заводской номер ККТ) is the unique key every record is keyed on.
+type KKT struct {
+	ID           int64
+	Organization string // организация, к которой относится касса (одна на весь загруженный файл)
+	RegNumber    string // Регистрационный номер ККТ
+	FNNumber     string // Заводской номер ФН
+	SerialNumber string // Заводской номер ККТ (unique)
+	Address      string // Адрес расчетов
+	Model        string // Модель ККТ
+	OFDEndDate   string // Дата окончания оказания услуг (ОФД), ISO yyyy-mm-dd or ""
+	FNEndDate    string // Дата окончания срока ФН, ISO yyyy-mm-dd or ""
+	CreatedAt    string
+	UpdatedAt    string
+}
+
+// UpsertKKT inserts a new record or updates the existing one matched by SerialNumber.
+// It returns the record id and whether a new row was inserted.
+//
+// On update, a blank field in k never clobbers an already-stored value (e.g.
+// the address manually fixed via the edit form, or a field the source CSV
+// happens to be missing for this row) - only non-empty fields overwrite.
+// Organization is the exception: the upload form always requires it, so it
+// always overwrites.
+func (d *DB) UpsertKKT(k KKT) (id int64, inserted bool, err error) {
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	var existingID int64
+	err = d.QueryRow(`SELECT id FROM kkt WHERE serial_number = ?`, k.SerialNumber).Scan(&existingID)
+	switch err {
+	case nil:
+		_, err = d.Exec(`UPDATE kkt SET
+				organization=?,
+				reg_number=CASE WHEN ?='' THEN reg_number ELSE ? END,
+				fn_number=CASE WHEN ?='' THEN fn_number ELSE ? END,
+				address=CASE WHEN ?='' THEN address ELSE ? END,
+				model=CASE WHEN ?='' THEN model ELSE ? END,
+				ofd_end_date=CASE WHEN ?='' THEN ofd_end_date ELSE ? END,
+				fn_end_date=CASE WHEN ?='' THEN fn_end_date ELSE ? END,
+				updated_at=?
+			WHERE id=?`,
+			k.Organization,
+			k.RegNumber, k.RegNumber,
+			k.FNNumber, k.FNNumber,
+			k.Address, k.Address,
+			k.Model, k.Model,
+			k.OFDEndDate, k.OFDEndDate,
+			k.FNEndDate, k.FNEndDate,
+			now, existingID)
+		if err != nil {
+			return 0, false, err
+		}
+		return existingID, false, nil
+	default:
+		res, insErr := d.Exec(`INSERT INTO kkt (serial_number, organization, reg_number, fn_number, address, model, ofd_end_date, fn_end_date, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			k.SerialNumber, k.Organization, k.RegNumber, k.FNNumber, k.Address, k.Model, k.OFDEndDate, k.FNEndDate, now, now)
+		if insErr != nil {
+			return 0, false, insErr
+		}
+		newID, _ := res.LastInsertId()
+		return newID, true, nil
+	}
+}
+
+// ListKKT returns every record ordered with the most urgent first: a record
+// with no ОФД end date has no active subscription at all, which ranks above
+// even an already-expired one; the rest are ordered by whichever of the two
+// expiry dates comes soonest.
+func (d *DB) ListKKT() ([]KKT, error) {
+	rows, err := d.Query(`SELECT id, serial_number, organization, reg_number, fn_number, address, model, ofd_end_date, fn_end_date, created_at, updated_at
+		FROM kkt ORDER BY
+		CASE WHEN ofd_end_date = '' THEN 0 ELSE 1 END ASC,
+		MIN(
+			CASE WHEN ofd_end_date = '' THEN '9999-12-31' ELSE ofd_end_date END,
+			CASE WHEN fn_end_date = '' THEN '9999-12-31' ELSE fn_end_date END
+		) ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []KKT
+	for rows.Next() {
+		var k KKT
+		if err := rows.Scan(&k.ID, &k.SerialNumber, &k.Organization, &k.RegNumber, &k.FNNumber, &k.Address, &k.Model, &k.OFDEndDate, &k.FNEndDate, &k.CreatedAt, &k.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, k)
+	}
+	return out, rows.Err()
+}
+
+func (d *DB) DeleteKKT(id int64) error {
+	_, err := d.Exec(`DELETE FROM kkt WHERE id = ?`, id)
+	return err
+}
+
+// GetKKT fetches a single record by id, for pre-filling the edit form.
+func (d *DB) GetKKT(id int64) (KKT, error) {
+	var k KKT
+	err := d.QueryRow(`SELECT id, serial_number, organization, reg_number, fn_number, address, model, ofd_end_date, fn_end_date, created_at, updated_at
+		FROM kkt WHERE id = ?`, id).
+		Scan(&k.ID, &k.SerialNumber, &k.Organization, &k.RegNumber, &k.FNNumber, &k.Address, &k.Model, &k.OFDEndDate, &k.FNEndDate, &k.CreatedAt, &k.UpdatedAt)
+	return k, err
+}
+
+// UpdateKKT overwrites every editable field of the record with the given id -
+// used for manual corrections when a value the CSV import produced (most
+// often the address) is wrong or, as with a truncated source row, missing
+// entirely.
+func (d *DB) UpdateKKT(id int64, k KKT) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err := d.Exec(`UPDATE kkt SET serial_number=?, organization=?, reg_number=?, fn_number=?, address=?, model=?, ofd_end_date=?, fn_end_date=?, updated_at=? WHERE id=?`,
+		k.SerialNumber, k.Organization, k.RegNumber, k.FNNumber, k.Address, k.Model, k.OFDEndDate, k.FNEndDate, now, id)
+	return err
+}
+
+func (d *DB) CountKKT() (int, error) {
+	var n int
+	err := d.QueryRow(`SELECT COUNT(*) FROM kkt`).Scan(&n)
+	return n, err
+}
+
+// ListOrganizations returns the distinct organization names present in the
+// registry, sorted alphabetically. Used to populate the "notify for this
+// organization" recipient dropdown.
+func (d *DB) ListOrganizations() ([]string, error) {
+	rows, err := d.Query(`SELECT DISTINCT organization FROM kkt WHERE organization != '' ORDER BY organization`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var org string
+		if err := rows.Scan(&org); err != nil {
+			return nil, err
+		}
+		out = append(out, org)
+	}
+	return out, rows.Err()
+}

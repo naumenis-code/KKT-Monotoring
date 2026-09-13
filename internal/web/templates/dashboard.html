@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мониторинг ККТ</title>
+<link rel="stylesheet" href="/static/style.css">
+{{template "head-icons" .}}
+</head>
+<body>
+<div class="topbar">
+	<div class="brand">{{template "brand-icon" .}}<h1>Мониторинг ККТ</h1></div>
+	<nav>
+		<a href="/" class="active">Реестр</a>
+		{{if .IsAdmin}}
+		<a href="/settings">Настройки</a>
+		<form class="inline" method="post" action="/logout"><a href="#" onclick="this.closest('form').submit();return false;">Выход</a></form>
+		{{else}}
+		<a href="/login">Войти</a>
+		{{end}}
+	</nav>
+</div>
+<div class="container">
+	<div class="stats">
+		<div class="stat"><div class="num">{{.Total}}</div><div class="label">Всего ККТ</div></div>
+		<div class="stat"><div class="num">{{.ExpiringSoon}}</div><div class="label">Требуют внимания (≤30 дней)</div></div>
+	</div>
+
+	<div class="card">
+		<h2>Реестр ККТ</h2>
+		<form method="get" action="/" class="search">
+			<input type="text" name="q" value="{{.Query}}" placeholder="Поиск по организации или адресу установки">
+		</form>
+		{{if .Rows}}
+		<div class="table-wrap">
+		<table>
+			<thead>
+			<tr>
+				<th>Организация</th>
+				<th>Модель</th>
+				<th>Рег. номер ККТ</th>
+				<th>Зав. номер ККТ</th>
+				<th>Зав. номер ФН</th>
+				<th>Адрес расчетов</th>
+				<th>Оконч. услуг (ОФД)</th>
+				<th>Оконч. срока ФН</th>
+				{{if $.IsAdmin}}<th></th>{{end}}
+			</tr>
+			</thead>
+			<tbody>
+			{{range .Rows}}
+			<tr>
+				<td class="truncate" title="{{.Organization}}">{{.Organization}}</td>
+				<td class="truncate" title="{{.Model}}">{{.Model}}</td>
+				<td>{{.RegNumber}}</td>
+				<td>{{.SerialNumber}}</td>
+				<td>{{.FNNumber}}</td>
+				<td class="truncate wide" title="{{.Address}}">{{.Address}}</td>
+				<td>
+					{{if .OFD.Date}}
+						{{.OFD.Date}}
+						<div><span class="badge {{.OFD.Class}}">{{if lt .OFD.DaysLeft 0}}просрочено{{else}}{{.OFD.DaysLeft}} дн.{{end}}</span></div>
+					{{else}}<span class="badge danger">Не активирована</span>{{end}}
+				</td>
+				<td>
+					{{if .FN.Date}}
+						{{.FN.Date}}
+						<div><span class="badge {{.FN.Class}}">{{if lt .FN.DaysLeft 0}}просрочено{{else}}{{.FN.DaysLeft}} дн.{{end}}</span></div>
+					{{else}}<span class="badge none">нет данных</span>{{end}}
+				</td>
+				{{if $.IsAdmin}}
+				<td>
+					<a class="btn secondary small" href="/kkt/{{.ID}}/edit?q={{$.Query}}">Изменить</a>
+					<form class="inline" method="post" action="/kkt/{{.ID}}/delete" onsubmit="return confirm('Удалить запись {{.SerialNumber}}?');">
+						<input type="hidden" name="q" value="{{$.Query}}">
+						<button class="btn danger small" type="submit">Удалить</button>
+					</form>
+				</td>
+				{{end}}
+			</tr>
+			{{end}}
+			</tbody>
+		</table>
+		</div>
+		{{else if .Query}}
+		<p class="hint">Ничего не найдено по запросу «{{.Query}}».</p>
+		{{else if .IsAdmin}}
+		<p class="hint">Пока нет данных. <a href="/settings">Загрузите CSV-файл</a>, чтобы начать.</p>
+		{{else}}
+		<p class="hint">Пока нет данных.</p>
+		{{end}}
+	</div>
+</div>
+<script>
+(function () {
+	var input = document.querySelector('form.search input[name="q"]');
+	if (!input) return;
+	var form = input.closest('form');
+	var timer = null;
+	input.addEventListener('input', function () {
+		clearTimeout(timer);
+		timer = setTimeout(function () { form.submit(); }, 350);
+	});
+	if (input.value) {
+		input.focus();
+		var pos = input.value.length;
+		input.setSelectionRange(pos, pos);
+	}
+})();
+</script>
+</body>
+</html>
