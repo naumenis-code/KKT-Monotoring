@@ -50,6 +50,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /kkt/{id}/edit", s.requireAuth(s.handleEditKKTSubmit))
 
 	s.mux.HandleFunc("POST /upload", s.requireAuth(s.handleUploadSubmit))
+	s.mux.HandleFunc("POST /upload-license", s.requireAuth(s.handleUploadLicenseSubmit))
 
 	s.mux.HandleFunc("GET /settings", s.requireAuth(s.handleSettingsForm))
 	s.mux.HandleFunc("POST /settings/bot", s.requireAuth(s.handleSettingsBotSubmit))
@@ -57,6 +58,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /settings/recipients/{id}/delete", s.requireAuth(s.handleRecipientDelete))
 	s.mux.HandleFunc("POST /settings/recipients/{id}/toggle", s.requireAuth(s.handleRecipientToggle))
 	s.mux.HandleFunc("POST /settings/test", s.requireAuth(s.handleSettingsTest))
+	s.mux.HandleFunc("POST /settings/columns", s.requireAuth(s.handleSettingsColumnsSubmit))
 }
 
 func (s *Server) render(w http.ResponseWriter, name string, data any) {

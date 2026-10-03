@@ -41,6 +41,12 @@ func (s *Server) renderSettings(w http.ResponseWriter, extra map[string]any) {
 		return
 	}
 
+	columns, err := s.store.GetVisibleColumns()
+	if err != nil {
+		http.Error(w, "ошибка чтения настроек колонок", http.StatusInternalServerError)
+		return
+	}
+
 	data := map[string]any{
 		"Mode":                settings.Mode,
 		"TokenPreview":        maskTokenPreview(settings.Token, 8),
@@ -52,6 +58,8 @@ func (s *Server) renderSettings(w http.ResponseWriter, extra map[string]any) {
 		"Recipients":          recipients,
 		"Organizations":       organizations,
 		"Thresholds":          notify.Thresholds,
+		"ColumnDefs":          db.DashboardColumns,
+		"Columns":             columns,
 	}
 	for k, v := range extra {
 		data[k] = v
@@ -230,4 +238,59 @@ func (s *Server) handleUploadSubmit(w http.ResponseWriter, r *http.Request) {
 			", пропущено " + strconv.Itoa(result.Skipped) + ".",
 		"UploadErrors": result.Errors,
 	})
+}
+
+// handleUploadLicenseSubmit imports the separate "ТС ПиОТ" export, which
+// tracks the cash software license rather than ОФД/ФН. It only enriches
+// records that already exist (matched by "Заводской номер" = the same
+// serial number the main registry is keyed on) - the file carries no
+// organization, so it never creates new records on its own.
+func (s *Server) handleUploadLicenseSubmit(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		s.renderSettings(w, map[string]any{"LicenseUploadError": "Не удалось прочитать форму: " + err.Error()})
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		s.renderSettings(w, map[string]any{"LicenseUploadError": "Выберите CSV-файл для загрузки"})
+		return
+	}
+	defer file.Close()
+
+	result, err := csvimport.ImportLicenses(s.store, file)
+	if err != nil {
+		s.renderSettings(w, map[string]any{"LicenseUploadError": "Ошибка импорта: " + err.Error()})
+		return
+	}
+
+	msg := "Импорт завершён: обновлено " + strconv.Itoa(result.Updated) +
+		", пропущено " + strconv.Itoa(result.Skipped) + "."
+	if len(result.NotFound) > 0 {
+		msg += " Не найдено в реестре: " + strconv.Itoa(len(result.NotFound)) + "."
+	}
+	s.renderSettings(w, map[string]any{
+		"LicenseUploadSuccess":  msg,
+		"LicenseUploadErrors":   result.Errors,
+		"LicenseUploadNotFound": result.NotFound,
+	})
+}
+
+// handleSettingsColumnsSubmit saves which dashboard columns are shown. An
+// unchecked checkbox is simply absent from the submitted form, so every
+// column not present in r.Form is treated as hidden.
+func (s *Server) handleSettingsColumnsSubmit(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	visible := map[string]bool{}
+	for _, c := range db.DashboardColumns {
+		visible[c.Key] = r.FormValue("col_"+c.Key) != ""
+	}
+	if err := s.store.SetVisibleColumns(visible); err != nil {
+		s.renderSettings(w, map[string]any{"Error": "Ошибка сохранения настроек колонок: " + err.Error()})
+		return
+	}
+	s.renderSettings(w, map[string]any{"Success": "Настройки колонок сохранены."})
 }
