@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"kkt-monitor/internal/db"
-	"kkt-monitor/internal/telegram"
+	"KKT-Monotoring/internal/db"
+	"KKT-Monotoring/internal/telegram"
 )
 
 // Thresholds are the days-remaining values that trigger a notification.

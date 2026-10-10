@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 // Column headers for the separate "ТС ПиОТ" export, which tracks the cash

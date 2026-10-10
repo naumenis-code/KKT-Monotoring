@@ -1,7 +1,7 @@
 services:
-  kkt-monitor:
+  KKT-Monotoring:
     build: .
-    image: kkt-monitor:latest
+    image: KKT-Monotoring:latest
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:${PORT:-8080}"

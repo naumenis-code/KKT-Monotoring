@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 const directBaseURL = "https://api.telegram.org"

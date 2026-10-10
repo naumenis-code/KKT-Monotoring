@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 // column headers we care about, matched by exact name against the file's header row.

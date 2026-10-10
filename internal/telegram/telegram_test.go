@@ -3,7 +3,7 @@ package telegram
 import (
 	"testing"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 func TestParseSocks5(t *testing.T) {

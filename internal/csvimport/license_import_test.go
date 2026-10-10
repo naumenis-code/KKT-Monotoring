@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 // licenseSample mirrors the real "ТС ПиОТ" export: semicolon-delimited,

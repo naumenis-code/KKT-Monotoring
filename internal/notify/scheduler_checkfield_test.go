@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"kkt-monitor/internal/db"
-	"kkt-monitor/internal/telegram"
+	"KKT-Monotoring/internal/db"
+	"KKT-Monotoring/internal/telegram"
 )
 
 func newTestDB(t *testing.T) *db.DB {

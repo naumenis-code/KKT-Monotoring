@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
-	"kkt-monitor/internal/config"
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/config"
+	"KKT-Monotoring/internal/db"
 )
 
 //go:embed templates/*.html

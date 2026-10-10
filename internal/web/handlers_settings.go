@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"kkt-monitor/internal/csvimport"
-	"kkt-monitor/internal/db"
-	"kkt-monitor/internal/notify"
-	"kkt-monitor/internal/telegram"
+	"KKT-Monotoring/internal/csvimport"
+	"KKT-Monotoring/internal/db"
+	"KKT-Monotoring/internal/notify"
+	"KKT-Monotoring/internal/telegram"
 )
 
 func (s *Server) handleSettingsForm(w http.ResponseWriter, r *http.Request) {

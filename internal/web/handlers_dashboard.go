@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 // dashboardURL returns "/" or "/?q=..." so an action taken from a filtered

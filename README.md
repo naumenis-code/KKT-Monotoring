@@ -1,4 +1,4 @@
-# kkt-monitor
+# KKT-Monotoring
 
 Сервис учёта ККТ (контрольно-кассовой техники): реестр касс, загрузка CSV-выгрузок
 «Мониторинг ККТ и ФН» и уведомления в Telegram об истечении сроков.
@@ -79,8 +79,8 @@ go run .
 Сборка отдельного бинарника:
 
 ```bash
-go build -o kkt-monitor .
-ADMIN_PASSWORD=... ./kkt-monitor
+go build -o KKT-Monotoring .
+ADMIN_PASSWORD=... ./KKT-Monotoring
 ```
 
 ## Запуск в Docker
@@ -103,13 +103,13 @@ docker compose up -d --build
 Либо без compose:
 
 ```bash
-docker build -t kkt-monitor .
+docker build -t KKT-Monotoring .
 mkdir -p data
-docker run -d --name kkt-monitor \
+docker run -d --name KKT-Monotoring \
   -p 8080:8080 \
   -e ADMIN_PASSWORD=change-me \
   -v "$(pwd)/data:/data" \
-  kkt-monitor
+  KKT-Monotoring
 ```
 
 ## Переменные окружения

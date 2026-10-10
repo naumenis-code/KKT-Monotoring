@@ -1,4 +1,4 @@
-// Command kkt-monitor runs the KKT (cash register) fleet monitoring service:
+// Command KKT-Monotoring runs the KKT (cash register) fleet monitoring service:
 // a public web dashboard plus a password-protected area for uploading CSV
 // exports and managing Telegram notification settings, and a background
 // scheduler that warns about upcoming ОФД service and ФН expiry dates.
@@ -13,10 +13,10 @@ import (
 	"syscall"
 	"time"
 
-	"kkt-monitor/internal/config"
-	"kkt-monitor/internal/db"
-	"kkt-monitor/internal/notify"
-	"kkt-monitor/internal/web"
+	"KKT-Monotoring/internal/config"
+	"KKT-Monotoring/internal/db"
+	"KKT-Monotoring/internal/notify"
+	"KKT-Monotoring/internal/web"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("kkt-monitor слушает на %s", cfg.ListenAddr)
+		log.Printf("KKT-Monotoring слушает на %s", cfg.ListenAddr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("http server: %v", err)
 		}

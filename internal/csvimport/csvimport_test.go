@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"kkt-monitor/internal/db"
+	"KKT-Monotoring/internal/db"
 )
 
 // sample mirrors the real "Мониторинг ККТ и ФН" export format: semicolon

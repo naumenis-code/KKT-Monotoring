@@ -1,4 +1,4 @@
-module kkt-monitor
+module KKT-Monotoring
 
 go 1.25.0
 

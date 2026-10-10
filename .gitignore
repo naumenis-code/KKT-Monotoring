@@ -2,4 +2,4 @@
 /data/*.db-*
 .env
 *.log
-/kkt-monitor
+/KKT-Monotoring

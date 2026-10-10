@@ -6,13 +6,13 @@ RUN go mod download
 
 COPY . .
 # modernc.org/sqlite is pure Go, so CGO_ENABLED=0 gives a fully static binary.
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/kkt-monitor .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/KKT-Monotoring .
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata su-exec && \
     adduser -D -u 10001 kkt
 WORKDIR /app
-COPY --from=build /out/kkt-monitor /app/kkt-monitor
+COPY --from=build /out/KKT-Monotoring /app/KKT-Monotoring
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
@@ -29,4 +29,4 @@ RUN mkdir -p /data && chown kkt:kkt /data
 # user itself before the app binary ever runs.
 EXPOSE 8080
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/app/kkt-monitor"]
+CMD ["/app/KKT-Monotoring"]
